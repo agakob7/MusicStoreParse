@@ -3,13 +3,12 @@
 
 namespace Drivers {
 
-    require_once(__ROOT__ . '/BaseStore.php');
 
     class Rnr extends \BaseStore implements \IMusicStore
     {
         protected $domain = 'http://www.rnr.pl/';
-        protected $per_page = 24;
-        protected $name_suffix ;
+        protected $per_page = 30;
+        protected $name_suffix;
 
         public function getProducts($url, $categories, $weight = null, $name_suffix = null, $filters = array())
         {
@@ -22,42 +21,42 @@ namespace Drivers {
 
             $results = array('pages' => 0, 'total' => 0, 'products' => array(), 'filters' => array('producers' => array()));
 
-            $this->_getCategoryProducts(1, $results, $http_query, $url, array('filters'));
+            $this->_getCategoryProducts(1, $results, $http_query, $url, array('products', 'filters', 'total'));
 
+            //   echo  $results['pages'];
 
-            if (isset($filters['producer'])) {
+            if (\Arr::get($filters, 'producer')) {
 
-
-                $id_producer = $this->_getProducer($filters['producer'], $results['filters']['producers'], 'name', 'id');
+                $id_producer = $this->_getProducer(\Arr::get($filters, 'producer'), $results['filters']['producers'], 'name', 'id');
 
                 if ($id_producer == null)
                     throw new \InvalidArgumentException("Taki producent nie istnieje w tej kategorii");
 
+                $results = array();
+
                 $this->_filterPost('producers', $query['src'], $id_producer);
                 $this->_getCategoryProducts(1, $results, $http_query, $url, array('products', 'total')); //new content after apling filters
+
             }
 
 
             //parse next pages
-            for ($i = 2; $i < $results['pages']; $i++) {
+            for ($i = 2; $i <= $results['pages']; $i++) {
                 $this->_getCategoryProducts($i, $results, $http_query, $url, array('products'));
             }
 
-            $i = 0;
-
             foreach ($results['products'] as &$product) {
 
-                $this->_getProductPage($product);
+                // $this->_getProductPage($product);
                 $product->weight = $weight;
                 $product->categories = $categories;
 
-                $i++;
 
             }
 
-          //  echo '<pre>';
-          //  print_r($results['products']);
-         //   die();
+            echo '<pre>';
+            print_r($results['products']);
+            die();
             return $this->saveCSV($results['products']);
 
         }
@@ -138,10 +137,10 @@ namespace Drivers {
 
             $json_decoded = json_decode($json, true);
 
-
             if (in_array('total', $fields)) {
                 $results['total'] = $json_decoded['paginator']['total'];
                 $results['pages'] = $json_decoded['paginator']['last_page'];
+
             }
             if (in_array('filters', $fields))
                 $results['filters'] = $json_decoded['filters'];
@@ -154,7 +153,7 @@ namespace Drivers {
 
                     $ent->available = $row['availability_id'] == 9 ? false : true;
                     $name = trim($row['short_description']['name']);
-                    $ent->setName($name . ($ent->available ? '' : ' - Niedostępny'), $this->name_suffix);
+                    $ent->setName($name, $this->name_suffix . ($ent->available ? '' : ' Niedostępny '));
                     $ent->meta_tags = $name;
                     $ent->meta_title = \URL::title($name);
                     $ent->price = $row['price']['price_basic'];
@@ -171,7 +170,7 @@ namespace Drivers {
         private function _getProducer($search, $haystack, $key = 'id', $result = 'name')
         {
             foreach ($haystack as $s) {
-                if ($s[$key] == $search)
+                if (strtolower($s[$key]) == strtolower($search)) // ignore case when comparing
                     return $s[$result];
             }
             return null;
