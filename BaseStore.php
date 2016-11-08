@@ -6,7 +6,7 @@ abstract class BaseStore
     protected $url;
     protected $domain;
     protected $scrapper;
-    protected $limit = 0;
+    protected $limit = 2;
 
     function __construct()
     {

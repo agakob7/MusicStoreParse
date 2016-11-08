@@ -23,7 +23,6 @@ if (isset($_POST['url'])) {
     $parser = new Drivers\Rnr();
     try {
         $file = $parser->getProducts($_POST['url'], $_POST['category'], $_POST['weight'], $_POST['name_suffix'], array('producer' => $_POST['producer']));
-        $nic = 0;
         download($file);
 
     } catch (InvalidArgumentException $ex) {

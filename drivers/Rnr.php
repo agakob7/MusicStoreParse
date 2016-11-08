@@ -39,7 +39,6 @@ namespace Drivers {
 
             }
 
-
             //parse next pages
             for ($i = 2; $i <= $results['pages']; $i++) {
                 $this->_getCategoryProducts($i, $results, $http_query, $url, array('products'));
@@ -51,12 +50,11 @@ namespace Drivers {
                 $product->weight = $weight;
                 $product->categories = $categories;
 
-
             }
 
-            echo '<pre>';
+           /* echo '<pre>';
             print_r($results['products']);
-            die();
+            die();*/
             return $this->saveCSV($results['products']);
 
         }
