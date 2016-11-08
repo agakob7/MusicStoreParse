@@ -13,7 +13,6 @@ class WebScrap
 
     }
 
-
     function getWebsite($url, $request = 'GET', $post = array(), $referrer = null, $initial = true)
     {
 

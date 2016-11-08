@@ -15,13 +15,15 @@ spl_autoload_register(function ($class_name) {
 
 });
 
+$post = array();
 
 if (isset($_POST['url'])) {
 
+    $post = $_POST;
     $parser = new Drivers\Rnr();
     try {
         $file = $parser->getProducts($_POST['url'], $_POST['category'], $_POST['weight'], $_POST['name_suffix'], array('producer' => $_POST['producer']));
-$nic = 0;
+        $nic = 0;
         download($file);
 
     } catch (InvalidArgumentException $ex) {
@@ -60,29 +62,29 @@ function download($file)
     <form method="post" class='form form-horizontal'>
         <div class="form-group">
             <label class="control-label ">Url</label>
-            <input type="url" name="url" class="form-control" required/>
+            <input type="url" name="url" class="form-control" value="<?=Arr::get($post,'url')?>" required/>
             <span>Adres url kategorii w sklepie, np. http://www.rnr.pl/instrumenty-klawiszowe/keyboardy </span>
         </div>
         <div class="form-group">
             <label class="control-label ">Nazwa producenta:</label>
-            <input type="text" name="producer" class="form-control"/>
+            <input type="text" name="producer" class="form-control" value="<?=Arr::get($post,'producer')?>"/>
             <span>Nazwa producenta, którego produkty mają zostać pobrane</span>
         </div>
 
         <div class="form-group">
             <label class="control-label ">Waga:</label>
-            <input type="number" name="weight" class="form-control"/>
+            <input type="number" name="weight" class="form-control" value="<?=Arr::get($post,'weight')?>"/>
             <span>Waga produktu (tylko liczby)</span>
         </div>
 
         <div class="form-group">
             <label class="control-label ">Dołącz do nazwy</label>
-            <input type="text" name="name_suffix" class="form-control"/>
+            <input type="text" name="name_suffix" class="form-control"  value="<?=Arr::get($post,'name_suffix')?>"/>
         </div>
 
         <div class="form-group">
             <label class="control-label ">Nazwa kategorii docelowej</label>
-            <input type="text" name="category" class="form-control" required/>
+            <input type="text" name="category" class="form-control" required value="<?=Arr::get($post,'category')?>"/>
             <span>Jeśli nie istnieje zostanie dodana</span>
         </div>
 
