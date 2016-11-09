@@ -968,7 +968,7 @@ class simple_html_dom_node
  *
  * @package PlaceLocalInclude
  */
-class simple_html_dom
+class SimpleHtmlDom
 {
     public $root = null;
     public $nodes = array();

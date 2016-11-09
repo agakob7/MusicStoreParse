@@ -8,30 +8,34 @@ class Product
         $this->url = $url;
     }
 
-    private $name;
+    public $name;
     public $price;
 
     public $producer;
+    public $id_producer;
     public $categories;
 
-    private $description;
-    private $description_short;
+    public $description;
+    public $description_short;
     public $meta_description;
     public $meta_tags;
+
     //import product always not visible
     public $weight;
     public $photos = array();
-
     public $visible = 0;
     public $url;
     public $available;
-
+    public $out_of_stock = 2;
+    public $code;
+    public $height;
+    public $depth;
+    public $width;
     //  public $quantity;
 
 
     public function setName($name, $suffix)
     {
-
         $this->name = trim($name) . ' ' . $suffix;
     }
 
@@ -40,12 +44,12 @@ class Product
 
         $breaks = array('<br />', '<br>', '<br/>');
 
-        //remove html attributes from tags;
+        //remove html attributes from tags;c
         $description = preg_replace("#(<[a-zA-Z0-9]+)[^\>]+>#", "\\1>", $description);
         $description = html_entity_decode(strip_tags($description, '<b><p><strong><b><ul><ol><li><h1><h2><h3><h4><h5><br>'));
-
-
-        $this->description = $this->html_entity_decode_wthsemicolon($description, '<b><p><strong><b><ul><ol><li>');
+        $description = $this->html_entity_decode_wthsemicolon($description, '<b><p><strong><b><ul><ol><li>');
+#htmlentities
+        $this->description = ($description);
         $this->description_short = Text::limit_chars(strip_tags(str_replace($breaks, ' ', $this->description)), 400, true);
         $this->meta_description = Text::limit_chars($this->description_short, 160, true);
 

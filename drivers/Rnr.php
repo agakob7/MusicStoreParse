@@ -1,40 +1,49 @@
 <?php
-
-
 namespace Drivers {
 
 
     class Rnr extends \BaseStore implements \IMusicStore
     {
+
         protected $domain = 'http://www.rnr.pl/';
-        protected $per_page = 30;
+        protected $per_page = 12;
+
         protected $name_suffix;
 
-        public function getProducts($url, $categories, $weight = null, $name_suffix = null, $filters = array())
+        public function getProducts($url, $categories, $dimensions = array(), $name_suffix = null, $filters = array())
         {
+            $this->dimensions = $dimensions;
+            $this->categories = $categories;
+
             $this->name_suffix = $name_suffix;
+
             $this->set_url($url, true);
 
             $query = $this->_getInitCategoryQry($this->html);
+
+            //     $this->_getPages();
 
             $http_query = preg_replace('/%5B\d+/', '%5B', http_build_query($query));
 
             $results = array('pages' => 0, 'total' => 0, 'products' => array(), 'filters' => array('producers' => array()));
 
-            $this->_getCategoryProducts(1, $results, $http_query, $url, array('products', 'filters', 'total'));
+            $this->_getCategoryProducts(1, $results, $http_query, $url, array('filters', 'total', 'products'));
 
-            //   echo  $results['pages'];
+            // $this->_filterPost($query['src'], 'producers', null);
+
+            $producers = $results['filters']['producers'];
 
             if (\Arr::get($filters, 'producer')) {
 
-                $id_producer = $this->_getProducer(\Arr::get($filters, 'producer'), $results['filters']['producers'], 'name', 'id');
+                ///search producer_id by entered name
+                $id_producer = $this->_getProducer(\Arr::get($filters, 'producer'), $producers, 'name', 'id');
 
                 if ($id_producer == null)
                     throw new \InvalidArgumentException("Taki producent nie istnieje w tej kategorii");
 
                 $results = array();
 
-                $this->_filterPost('producers', $query['src'], $id_producer);
+                $this->_filterPost($query['src'], 'producers', $id_producer);
                 $this->_getCategoryProducts(1, $results, $http_query, $url, array('products', 'total')); //new content after apling filters
 
             }
@@ -46,24 +55,78 @@ namespace Drivers {
 
             foreach ($results['products'] as &$product) {
 
-                // $this->_getProductPage($product);
-                $product->weight = $weight;
-                $product->categories = $categories;
+                $product->producer = $this->_getProducer($product->id_producer, $producers, 'id', 'name');
 
+
+                $product->weight = \Arr::get($this->dimensions, 'weight');
+                $product->width = \Arr::get($this->dimensions, 'width');
+                $product->height = \Arr::get($this->dimensions, 'height');
+                $product->depth = \Arr::get($this->dimensions, 'depth');
+
+                $product->categories = $this->categories;
             }
 
-           /* echo '<pre>';
-            print_r($results['products']);
-            die();*/
-            return $this->saveCSV($results['products']);
+            $this->urlsDB->rw($results['products']); //Rewrites all content the database with the provided data.
+
+            //  $product = \Object::recast(new \Product(''), $product); //stdclass to product object
+            $this->productsDB->rw(array());
+
+            $this->parseUrls();
 
         }
+
+        public function retry()
+        {
+            $this->parseUrls();
+        }
+
+        private function parseUrls()
+        {
+            $products = $this->urlsDB->select(array());
+
+            $i = 1;
+
+
+            foreach ($products as $product) {
+
+                if ($i > $this->parse_limit)
+                    break;
+
+                $product = \Object::recast(new \Product(''), json_decode(json_encode($product))); //array to object , stdclass to product object
+                $this->_getProductPage($product);
+
+                //usun rekord
+
+                $product->photos = implode(',', $product->photos);
+
+                if (!$this->productsDB->exists("url", $product->url))
+                    $this->productsDB->add($product);
+
+                $find = $this->urlsDB->where(array(), "url", $product->url);
+                if ($find)
+                    $this->urlsDB->rm(key($find));
+
+                $i++;
+            }
+        }
+
+
+        private function _getPages()
+        {
+            $this->scrapper->getWebsite("http://www.rnr.pl/offer/render/properties", 'POST', http_build_query(array(
+                'display' => 'grid',
+                'limit' => $this->per_page,
+                'order' => '+short_description.name'
+            )), false);
+        }
+
 
         /**
          * @param \Product $product
          */
         private function _getProductPage(&$product)
         {
+
             $this->set_url($product->url);
 
             $photos = $this->html->find("a.foto");
@@ -72,6 +135,8 @@ namespace Drivers {
 
             if (is_object($description))
                 $product->setDescription($description->innertext);
+
+            //get 3 chars from producer name, remove producer name from product name and join
 
             foreach ($photos as $photo) {
                 $prop = "data-type";
@@ -102,13 +167,13 @@ namespace Drivers {
                 'properties' => $offers->$data_properties,
                 'filters' => $offers->$data_filters,
                 'paginator' => 1,
-                'compare' => $offers->$data_compare,
-                'properties' => json_encode(array(
-                        'limit' => $this->per_page,
-                        'display' => 'grid',
-                        'order' => ' +short_description.name'
-                    )
-                )
+                'compare' => 1,
+                /* 'properties' => json_encode(array(
+                         'limit' => $this->per_page,
+                         'display' => 'grid',
+                         'order' => ' +short_description.name'
+                     )
+                 )*/
 
 
             ];
@@ -118,7 +183,7 @@ namespace Drivers {
         }
 
         //availability, 53,11
-        private function _filterPost($type = 'producers', $src, $values)
+        private function _filterPost($src, $type = 'null', $values = null)
         {
             $this->scrapper->getWebsite("http://www.rnr.pl/offer/render/filter/set", 'POST', http_build_query(array(
                 'src' => $src,
@@ -148,17 +213,13 @@ namespace Drivers {
                 foreach ($json_decoded['products'] as $row) {
 
                     $ent = new \Product($this->domain . $row['url']['modurl_path']);
-
                     $ent->available = $row['availability_id'] == 9 ? false : true;
                     $name = trim($row['short_description']['name']);
                     $ent->setName($name, $this->name_suffix . ($ent->available ? '' : ' Niedostępny '));
                     $ent->meta_tags = $name;
                     $ent->meta_title = \URL::title($name);
                     $ent->price = $row['price']['price_basic'];
-
-                    if (isset($results['filters']['producers']))
-                        $ent->producer = $this->_getProducer($row['producer_id'], $results['filters']['producers']);
-
+                    $ent->id_producer = $row['producer_id'];
 
                     $results['products'][] = $ent;
                 }

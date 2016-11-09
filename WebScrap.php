@@ -1,4 +1,5 @@
 <?php
+ini_set("time_limit", 1200);
 
 class WebScrap
 {
@@ -15,11 +16,12 @@ class WebScrap
 
     function getWebsite($url, $request = 'GET', $post = array(), $referrer = null, $initial = true)
     {
-
         $this->initial = $initial;
 
-        //  $user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36';
-        $timeout = 60;
+        #echo $url;
+
+        $user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36';
+        $timeout = 10;
         $ch = curl_init();
 
         if ($request == 'POST') {
@@ -28,13 +30,15 @@ class WebScrap
 
         curl_setopt($ch, CURLOPT_URL, $url);
 
-        $cookie_file = __ROOT__ . '/' . md5($_SERVER['REMOTE_ADDR']) . '.txt';
+        $cookie_file = __ROOT__ . '/tmp/' . md5($_SERVER['REMOTE_ADDR']) . '.txt';
 
+        touch($cookie_file); //test for write perrmissions do tmp
+        //@unlink($cookie_file);
 
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
         curl_setopt($ch, CURLOPT_MAXREDIRS, 2);
-        // curl_setopt($ch, CURLOPT_USERAGENT, $user_agent);
+        curl_setopt($ch, CURLOPT_USERAGENT, $user_agent);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
@@ -44,7 +48,6 @@ class WebScrap
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         if ($this->initial) {
-
 
             @unlink($cookie_file);
             curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file);
@@ -64,7 +67,7 @@ class WebScrap
         $content = curl_exec($ch);
 
         if (curl_errno($ch)) {
-            echo $url;
+            echo "blad" . $url;
             throw new \Exception(curl_errno($ch));
         }
 
