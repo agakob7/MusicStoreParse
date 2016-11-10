@@ -17,7 +17,7 @@ class Object
             if ($destinationReflection->hasProperty($name)) {
                 $propDest = $destinationReflection->getProperty($name);
                 $propDest->setAccessible(true);
-                $propDest->setValue($destination,$value);
+                $propDest->setValue($destination, $value);
             } else {
                 $destination->$name = $value;
             }

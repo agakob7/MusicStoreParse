@@ -1,24 +1,32 @@
 <?php
+require_once("defines.php");
 
-//   print_r($urlsDb->where(array(), "url", "http://www.rnr.pl/gj2-glendora-antique-white-maple-basswood-hss-gh"));
 
-define('__ROOT__', dirname(__FILE__) . '/');
-define('__DRIVERS__', __ROOT__ . 'Drivers/');
-define('__VENDOR__', __ROOT__ . 'Vendor/');
-require_once("/Vendor/fllat/fllat.php");
-
-require_once("AutoLoader.php");
-
-$post = array();
-$urlsDb = new \Fllat("urls", __ROOT__ . "db");
+$urlsDb = new \Fllat("urls", DB);
+$productsDB = new \Fllat("products", DB);
 
 $notProcessUrlsCnt = count($urlsDb->select());
+#print_r($urlsDb->select());
 
-$productsDB = new \Fllat("products", __ROOT__ . "db");
 $products = count($productsDB->select());
-
-
 $post = $_POST;
+
+$drivers = getDrivers();
+
+function getDrivers()
+{
+    $res = array();
+    $classes = array_diff(scandir(DRIVERS), array('..', '.'));
+
+    foreach ($classes as $class) {
+        $name = str_replace('.php', '', $class);
+
+        $class = "Drivers\\" . $name;
+        $parser = new $class(null, null, null);
+        $res[$name] = $parser->domain;
+    }
+    return $res;
+}
 
 ?>
 
@@ -97,17 +105,34 @@ $post = $_POST;
             }, "json");
             return true;
         }
+        function getCsv() {
+            $("#csv").attr("href", 'download.php?' + $.param($("form").serializeArray()));
+        }
 
     </script>
 </head>
 <body>
 <div class="container">
     <form method="post" class='form form-horizontal' onsubmit="javascript:postData('new'); return false;"/>
+
+    <div class="form-group">
+        <label class="control-label ">Strona</label>
+
+        <select name="driver"  class="form-control" required>
+            <option value="">wybierz</option>
+            <?php foreach ($drivers as $key => $driver) : ?>
+            <option value="<?= $key ?>"><?= $driver ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+
+
     <div class="form-group">
         <label class="control-label ">Url</label>
         <input type="url" name="url" class="form-control" value="<?= Arr::get($post, 'url') ?>" required/>
         <span>Adres url kategorii w sklepie, np. http://www.rnr.pl/instrumenty-klawiszowe/keyboardy </span>
     </div>
+
     <div class="form-group">
         <label class="control-label ">Nazwa producenta:</label>
         <input type="text" name="producer" class="form-control" value="<?= Arr::get($post, 'producer') ?>"/>
@@ -173,7 +198,7 @@ $post = $_POST;
            class="btn btn-danger <?php if (!$notProcessUrlsCnt): ?> hidden <?php endif ?>">
             Pobierz brakujące produkty: <span id="remains"><?= $notProcessUrlsCnt ?></span> </a>
 
-        <a href="./download.php" target="_blank" id="csv"
+        <a href="#" onclick="return getCsv();" target="_blank" id="csv"
            class="btn btn-success <?php if ($notProcessUrlsCnt): ?> hidden <?php endif ?>">
             Pobierz CSV</a>
         <button class="hidden btn btn-warning" id="loading">

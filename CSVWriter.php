@@ -1,7 +1,7 @@
 <?php
+
 class CsvWriter
 {
-   # public $filename;
     public $fp;
     public $delimeter = ';';
     public $limit;
@@ -9,7 +9,7 @@ class CsvWriter
 
     function __construct()
     {
-       # $this->filename = 'csv/' . $filename . '.csv';
+        # $this->filename = 'csv/' . $filename . '.csv';
         $this->fp = fopen('php://output', 'w');
         fputs($this->fp, "\xEF\xBB\xBF");
     }

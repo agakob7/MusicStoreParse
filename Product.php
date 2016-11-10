@@ -25,34 +25,56 @@ class Product
     public $photos = array();
     public $visible = 0;
     public $url;
-    public $available;
+    public $available = true;
     public $out_of_stock = 2;
     public $code;
     public $height;
     public $depth;
     public $width;
+    public $discount;
+
     //  public $quantity;
 
 
-    public function setName($name, $suffix)
+    public function setName($suffix, $notavailable)
     {
-        $this->name = trim($name) . ' ' . $suffix;
+
+        if ($this->available)
+            $notavailable = null;
+
+        $promo = $this->discount ? "PROMO" : null;
+        $this->name = implode(' ', array_filter(array($this->name, $suffix, $promo, $notavailable)));
     }
 
-    public function setDescription($description)
+    public function SetDescription($description)
     {
-
-        $breaks = array('<br />', '<br>', '<br/>');
-
         //remove html attributes from tags;c
         $description = preg_replace("#(<[a-zA-Z0-9]+)[^\>]+>#", "\\1>", $description);
         $description = html_entity_decode(strip_tags($description, '<b><p><strong><b><ul><ol><li><h1><h2><h3><h4><h5><br>'));
         $description = $this->html_entity_decode_wthsemicolon($description, '<b><p><strong><b><ul><ol><li>');
 #htmlentities
-        $this->description = ($description);
-        $this->description_short = Text::limit_chars(strip_tags(str_replace($breaks, ' ', $this->description)), 400, true);
+        $this->description = trim($description);
+
+    }
+
+    public function setShortDescription()
+    {
+
+        $breaks = array('<br />', '<br>', '<br/>');
+        $this->description_short = Text::limit_chars(strip_tags(str_ireplace($breaks, ' ', $this->description)), 400, true);
         $this->meta_description = Text::limit_chars($this->description_short, 160, true);
 
+    }
+
+
+    public function prepareCode()
+    {
+        //   print_r($this->name);
+        //  var_dump($this->producer);
+        $t = substr($this->producer, 0, 3);
+        $t1 = str_ireplace(strtolower($this->producer), '', strtolower($this->name));
+
+        $this->code = substr(strtoupper(\URL::title($t . $t1, '')), 0, 20);
     }
 
     private function html_entity_decode_wthsemicolon($description)
@@ -67,4 +89,6 @@ class Product
         return preg_replace(array_values($mapping), array_keys($mapping), $description);
 
     }
+
+
 }

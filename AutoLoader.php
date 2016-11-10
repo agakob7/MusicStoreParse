@@ -18,14 +18,18 @@ class AutoLoader
 
         $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
 
-        if (file_exists(__ROOT__ . $fileName))
-            include(__ROOT__ . $fileName);
+        if (file_exists(ROOT . $fileName))
+            include(ROOT . $fileName);
 
-        if (file_exists(__DRIVERS__ . $fileName))
-            include(__DRIVERS__ . $fileName);
 
-        if (file_exists(__VENDOR__ . $fileName))
-            include __VENDOR__ . $fileName;
+        if (file_exists(HELPERS . $fileName))
+            include(HELPERS . $fileName);
+
+        if (file_exists(DRIVERS . $fileName))
+            include(DRIVERS . $fileName);
+
+        if (file_exists(VENDOR . $fileName))
+            include VENDOR . $fileName;
 
 
         #  print_r(get_included_files());

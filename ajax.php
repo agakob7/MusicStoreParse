@@ -1,25 +1,28 @@
 <?php
 
-define('__ROOT__', dirname(__FILE__) . '/');
-define('__DRIVERS__', __ROOT__ . 'Drivers/');
-define('__VENDOR__', __ROOT__ . 'Vendor/');
-require_once("/Vendor/fllat/fllat.php");
+require_once("defines.php");
 
-require_once("AutoLoader.php");
-
-$urlsDb = new \Fllat("urls", __ROOT__ . "db");
-$productsDB = new \Fllat("products", __ROOT__ . "db");
+$urlsDb = new \Fllat("urls", DB);
+$productsDB = new \Fllat("products", DB);
 
 $post = $_POST;
 
 if (empty($post))
     return;
 
-$parser = new Drivers\Rnr($urlsDb, $productsDB, $post['limit']);
-
+#$parser = new Drivers\Rnr($urlsDb, $productsDB, $post['limit']);
 
 try {
 
+    $options = new Option();
+    $options->parse_limit = Arr::Get($post, 'limit');
+    $options->producer = Arr::get($post, 'producer');
+    $options->name_suffix = Arr::get($post, 'name_suffix');
+
+    $driver = Arr::get($post, 'driver', 'Hrt');
+    $class = "Drivers\\" . $driver;
+
+    $parser = new $class($urlsDb, $productsDB, $options);
 
     switch (\Arr::Get($post, 'action')) {
 
@@ -27,17 +30,10 @@ try {
             $results = $parser->retry();
             break;
         case "new":
-            $dimensions  = array(
-                'weight' =>Arr::get($_POST,'weight'),
-                'height' => Arr::get($_POST,'height'),
-                'width' => Arr::get($_POST,'width'),
-                'depth' => Arr::get($_POST,'depth')
-            );
-
-            $results = $parser->getProducts($_POST['url'], $_POST['category'], $dimensions, $_POST['name_suffix'], array('producer' => $_POST['producer']));
-
+            $results = $parser->getProducts($post['url']);
             break;
     }
+
     print json_encode(array('remains' => count($urlsDb->select())));
 
 } catch (Exception $ex) {

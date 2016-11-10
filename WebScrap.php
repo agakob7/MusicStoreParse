@@ -9,11 +9,6 @@ class WebScrap
     protected $initial = true;
     protected $domain;
 
-    function __construct()
-    {
-
-    }
-
     function getWebsite($url, $request = 'GET', $post = array(), $referrer = null, $initial = true)
     {
         $this->initial = $initial;
@@ -30,7 +25,7 @@ class WebScrap
 
         curl_setopt($ch, CURLOPT_URL, $url);
 
-        $cookie_file = __ROOT__ . '/tmp/' . md5($_SERVER['REMOTE_ADDR']) . '.txt';
+        $cookie_file = ROOT . '/tmp/' . md5($_SERVER['REMOTE_ADDR']) . '.txt';
 
         touch($cookie_file); //test for write perrmissions do tmp
         //@unlink($cookie_file);
