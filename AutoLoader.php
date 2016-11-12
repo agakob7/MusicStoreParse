@@ -8,31 +8,24 @@ class AutoLoader
 
 
         $className = ltrim($className, '\\');
-        $fileName = '';
-        $namespace = '';
+
+        $filename = $namespace = null;
+
         if ($lastNsPos = strrpos($className, '\\')) {
-            $namespace = substr($className, 0, $lastNsPos);
             $className = substr($className, $lastNsPos + 1);
-            $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $namespace) . DIRECTORY_SEPARATOR;
         }
 
-        $fileName .= str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
-
-        if (file_exists(ROOT . $fileName))
-            include(ROOT . $fileName);
+        $filename .= str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
 
 
-        if (file_exists(HELPERS . $fileName))
-            include(HELPERS . $fileName);
+        $directories = [
+            ROOT, HELPERS, DRIVERS, VENDOR, MODEL
+        ];
 
-        if (file_exists(DRIVERS . $fileName))
-            include(DRIVERS . $fileName);
+        foreach ($directories as $directory)
+            if (file_exists($directory . $filename))
+                include_once($directory . $filename);
 
-        if (file_exists(VENDOR . $fileName))
-            include VENDOR . $fileName;
-
-
-        #  print_r(get_included_files());
     }
 
 }

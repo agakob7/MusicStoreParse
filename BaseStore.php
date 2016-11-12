@@ -2,16 +2,16 @@
 
 abstract class BaseStore implements IMusicStore
 {
-    /** @var SimpleHtmlDom **/
+    /** @var SimpleHtmlDom * */
     public $html;
     protected $url;
     public $domain;
     protected $scrapper;
-    protected $result_limit = 0;
+    public $result_limit = 0;
     public $options;
-    /** @var Fllat **/
+    /** @var Fllat * */
     protected $uDB;
-    /** @var Fllat **/
+    /** @var Fllat * */
     protected $pDB;
     protected $nameOutOfStock = "aa";
 
@@ -41,31 +41,39 @@ abstract class BaseStore implements IMusicStore
 
         $this->html = new SimpleHtmlDom();
 
+        //load website content
         $content = $this->scrapper->getWebsite($this->url);
 
         $this->html->load($content);
 
     }
 
+    protected function emptyUrlsDB()
+    {
+        $this->uDB->rw(array());
+    }
+
+    /**
+     *remove products from db
+     */
     protected function emptyProductsDB()
     {
         $this->pDB->rw(array());
     }
 
-    public function Retry()
-    {
-        $this->parseProductUrls(null);
-    }
-
+    /**
+     * push products array to db
+     */
     protected function createProductsUrls($products = array())
     {
         $this->uDB->rw($products); //Rewrites all content the database with the provided data.
-
     }
 
-    protected function parseProductUrls()
+    /**
+     * continue parse products from db
+     */
+    public function ParseProductUrls()
     {
-
         $products = $this->uDB->select(array());
 
         $i = 1;
@@ -96,28 +104,22 @@ abstract class BaseStore implements IMusicStore
 
 
     /**
+     * Get products from db, apply filter from post
      * @param Product[] $result
      */
-    public
-    function outputCSV()
+    public function getResults($limit = 0, $offset = 0)
     {
-
-        $csv = new CsvWriter();
-
-        $csv->setHeaders(array('Nazwa', 'Cena', 'Producent', 'Kategorie', 'Opis', 'Opis krótki', 'Opis meta', 'Tagi meta', 'Waga', 'Zdjęcia', 'Widoczny', 'Zrodlo', 'Gdy brak na stanie', 'Kod produktu', 'Wysokość', 'Głębokość', 'Szerokość', 'Zniżka', 'Url'));
-
         $i = 0;
 
-        $result = $this->pDB->select();
+        $products = $this->pDB->select();
 
-        foreach ($result as &$row) {
-
-
-            /** @var Product $product */
-            $product = \Object::recast(new \Product(''), json_decode(json_encode($row))); //array to object , stdclass to product object
+        foreach ($products as &$product) {
 
             if ($this->result_limit > 0 && $i >= $this->result_limit)
                 break;
+
+            /** @var Product $product */
+            $product = \Object::recast(new \Product(''), json_decode(json_encode($product))); //array to object , stdclass to product object
 
             $product->prepareCode();
 
@@ -130,15 +132,19 @@ abstract class BaseStore implements IMusicStore
             $product->depth = $this->options->depth;
             $product->categories = $this->options->categories;
 
-
             unset($product->available);
             unset($product->id_producer);
             unset($product->data);
 
-            $csv->insertLine((array)$product);
+            $results[] = $product;
 
             $i++;
         }
+
+        if ($limit > 0)
+            return array_slice($results, $offset, $limit);
+
+        return $results;
 
     }
 

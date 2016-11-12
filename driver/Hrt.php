@@ -7,46 +7,46 @@ namespace Drivers {
 
         public $domain = 'http://hurtowniamuzyczna.pl/';
         protected $per_page = 50;
-        protected $result_limit = 1;
-        protected $name_suffix;
-
+        public $result_limit = 0;
         protected $nameOutOfStock = "Zapytaj";
 
         public function getProducts($url)
         {
-            $results = array();
 
+            $results = array();
+            $id_producer = null;
             $this->set_url($url, true);
 
-            if (isset($this->options->producer)) {
+            if ($this->options->producer) {
 
                 $producers = $this->_getProducers();
 
-                $search = array_search(strtolower($this->options->producer), array_map('strtolower', $producers)); //case insensitive search
+                $id_producer = array_search(strtolower($this->options->producer), array_map('strtolower', $producers)); //case insensitive search
 
-                if (!$search && $this->options->producer)
+                if (!$id_producer && $this->options->producer)
                     throw new \InvalidArgumentException("Taki producent nie istnieje w tej kategorii");
 
-                $this->set_url($url . '?producent_id=' . $search);
+                $this->set_url($url . '?producent_id=' . $id_producer);
+
             }
 
             $pages = $this->_getPagesNum();
 
             for ($i = 1; $i <= $pages; $i++) {
-                $this->_getCategoryProducts($url, $i, $results, null);
+                $this->_getCategoryProducts($url, $i, $results, $id_producer);
             }
 
             $this->emptyProductsDB();
             $this->createProductsUrls($results);
-            $this->parseProductUrls();
+            $this->ParseProductUrls();
         }
 
         private function _getPagesNum()
         {
+            $pages = 1;
 
             $nav = $this->html->find(".navCenter", 0);
 
-            $pages = 1;
             if (is_object($nav))
                 $pages = $nav->find("a", -1)->innertext;
 
@@ -69,7 +69,6 @@ namespace Drivers {
             if (is_object($stock) && strstr($stock->plaintext, 'Zapytaj o'))
                 $product->available = false;
 
-
             $photos = $this->html->find("a.photo500");
 
             foreach ($photos as $photo) {
@@ -82,25 +81,24 @@ namespace Drivers {
 
         }
 
-        private function _getCategoryProducts($url, $page = 1, &$results, $id_producer = null)
+        private function _getCategoryProducts($url, $page = 1, &$results, $id_producer)
         {
 
-            $this->scrapper->getWebsite($url . http_build_query(array('page' => $page, 'id_producer' => $id_producer)), 'GET', null, false);
+            $this->set_url($url . '?page=' . $page);
 
-            $lista = $this->html->find("ul.nowaListaCategory", 0);
+            $products = $this->html->find("ul.nowaListaCategory", 0);
 
 
-
-            if (!is_object($lista))
+            if (!is_object($products))
                 throw new \InvalidArgumentException("Niepoprawny  URL");
 
-            foreach ($lista->find("li") as $list) {
+            foreach ($products->find("li") as $list) {
 
                 $ent = new \Product($this->domain . $list->find("a", 0)->href);
+
                 $name = trim($list->find(".nLName > p > a", 0)->plaintext);
 
-                $ent->id_producer = $id_producer;
-                $this->getPrice($list, $ent);
+                $this->_getPrice($list, $ent);
 
                 $ent->meta_tags = $name;
                 $ent->name = $name;
@@ -110,9 +108,10 @@ namespace Drivers {
 
             }
 
+
         }
 
-        private function getPrice($html, &$product)
+        private function _getPrice($html, &$product)
         {
 
             $base_price = $html->find(".nLPriceBrutto", 0)->plaintext;// cena zwykla albo po promocji
@@ -127,22 +126,19 @@ namespace Drivers {
             }
         }
 
-        private
-        function  _getProducer()
+        private function  _getProducer()
         {
 
             $logo = $this->html->find(".photoLogo", 0);
 
-            if (is_object($logo)) {
-
+            if (is_object($logo))
                 preg_match('/producent(\s.+\s)Logo/', $logo->alt, $match);
-            }
+
 
             return trim(isset($match[1]) ? html_entity_decode(html_entity_decode($match[1])) : null);
         }
 
-        private
-        function  _getProducers()
+        private function  _getProducers()
         {
             $filtr = $this->html->find("ul.filtrList", 0);
 
@@ -159,7 +155,6 @@ namespace Drivers {
                             $results[$option->value] = html_entity_decode(html_entity_decode($option->innertext));
                     }
                 }
-
             }
             return $results;
         }

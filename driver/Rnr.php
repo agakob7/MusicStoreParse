@@ -5,19 +5,17 @@ namespace Drivers {
     class Rnr extends \BaseStore
     {
 
-        public $domain = 'http://rnr.pl/';
+        public $domain = 'http://www.rnr.pl/';
         protected $per_page = 12;
-
         protected $nameOutOfStock = "Niedostępny";
 
-        public function getProducts($url, $filters = array())
+        public function getProducts($url)
         {
 
             $this->set_url($url, true);
 
             $query = $this->_getInitCategoryQry($this->html);
 
-            //     $this->_getPages();
 
             $http_query = preg_replace('/%5B\d+/', '%5B', http_build_query($query));
 
@@ -25,14 +23,12 @@ namespace Drivers {
 
             $this->_getCategoryProducts(1, $results, $http_query, $url, array('filters', 'total', 'products'));
 
-            // $this->_filterPost($query['src'], 'producers', null);
-
             $producers = $results['filters']['producers'];
 
-            if (\Arr::get($filters, 'producer')) {
+            if ($this->options->producer) {
 
                 ///search producer_id by entered name
-                $id_producer = $this->_getProducer(\Arr::get($filters, 'producer'), $producers, 'name', 'id');
+                $id_producer = $this->_getProducer($this->options->producer, $producers, 'name', 'id');
 
                 if ($id_producer == null)
                     throw new \InvalidArgumentException("Taki producent nie istnieje w tej kategorii");
@@ -54,9 +50,10 @@ namespace Drivers {
                 $product->producer = $this->_getProducer($product->id_producer, $producers, 'id', 'name');
             }
 
+
             $this->emptyProductsDB();
             $this->createProductsUrls($results['products']);
-            $this->parseProductUrls();
+            $this->ParseProductUrls();
 
         }
 
@@ -78,9 +75,11 @@ namespace Drivers {
 
             $this->set_url($product->url);
 
+
             $photos = $this->html->find("a.foto");
 
             $description = $this->html->find("#description", 0);
+
 
             if (is_object($description))
                 $product->setDescription($description->innertext);
@@ -161,6 +160,8 @@ namespace Drivers {
                     $ent->available = $row['availability_id'] == 9 ? false : true;
                     $name = trim($row['short_description']['name']);
 
+
+                    $ent->name = $name;
                     $ent->meta_tags = $name;
                     $ent->meta_title = \URL::title($name);
                     $ent->price = $row['price']['price_basic'];

@@ -13,7 +13,6 @@ class WebScrap
     {
         $this->initial = $initial;
 
-        #echo $url;
 
         $user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36';
         $timeout = 10;
@@ -53,7 +52,7 @@ class WebScrap
             curl_setopt($ch, CURLOPT_COOKIE, $cookie_file);
             curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file);
         }
-        // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $request);
+         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $request);
 
         if ($request == 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);

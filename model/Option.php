@@ -14,5 +14,9 @@ class Option
     public $categories;
     public $producer;
 
+    public $result_limit;
+    public $result_offset;
+
+
 
 }
