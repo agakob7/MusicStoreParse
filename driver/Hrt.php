@@ -7,7 +7,7 @@ namespace Drivers {
 
         public $domain = 'http://hurtowniamuzyczna.pl/';
         protected $per_page = 50;
-        public $result_limit = 0;
+        public $result_limit = 2;
         protected $nameOutOfStock = "Zapytaj";
 
         public function getProducts($url)
@@ -83,8 +83,7 @@ namespace Drivers {
 
         private function _getCategoryProducts($url, $page = 1, &$results, $id_producer)
         {
-
-            $this->set_url($url . '?page=' . $page);
+            $this->set_url($url . '?' . http_build_query(array('page' => $page, 'producent_id' => $id_producer)));
 
             $products = $this->html->find("ul.nowaListaCategory", 0);
 

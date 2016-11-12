@@ -32,7 +32,7 @@ class Product
     public $depth;
     public $width;
     public $discount;
-
+    public $driver;
     //  public $quantity;
 
 

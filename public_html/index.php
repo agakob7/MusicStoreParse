@@ -155,7 +155,7 @@ function getDrivers()
             </div>
             <div class="form-group">
                 <a href="#" onclick="showFiles();return false; " id="csv"
-                   class="btn btn-success"  <?php if ($notProcessUrlsCnt): ?> style="display:none" <?php endif ?>">
+                   class="btn btn-success"  <?php if ($notProcessUrlsCnt): ?> style="display:none" <?php endif ?>>
                 Generuj CSV</a>
             </div>
             <div class="form-group">

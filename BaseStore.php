@@ -83,8 +83,11 @@ abstract class BaseStore implements IMusicStore
             if ($i > $this->options->parse_limit)
                 break;
 
+
             $product = \Object::recast(new \Product(''), json_decode(json_encode($product))); //array to object , stdclass to product object
             $this->getProductPage($product);
+
+            $product->driver = get_class($this);
 
             $product->photos = implode(',', $product->photos);
 
@@ -111,7 +114,8 @@ abstract class BaseStore implements IMusicStore
     {
         $i = 0;
 
-        $products = $this->pDB->select();
+        $results = array();
+        $products = $this->pDB->where(array(), 'driver', get_class($this));
 
         foreach ($products as &$product) {
 
@@ -135,6 +139,7 @@ abstract class BaseStore implements IMusicStore
             unset($product->available);
             unset($product->id_producer);
             unset($product->data);
+            unset($product->driver);
 
             $results[] = $product;
 
