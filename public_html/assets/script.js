@@ -37,11 +37,17 @@ function updateButtons(remains, count) {
 function showFiles() {
 
 
+
+    if (!$("select[name=driver]").val()) {
+        return alert("Podaj strone");
+    }
+
     $("#files_list").empty();
     var rows, limit, parser_limit = 0;
     var pages = 0;
 
     limit = $("input[name=record]").val();
+
     rows = Cookie.Read('records', 0);
     parser_limit = Cookie.Read('result_limit', 0);
 
@@ -52,7 +58,7 @@ function showFiles() {
         limit = rows;
 
     if (parser_limit > 0)
-        limit = parser_limit;
+        rows = parser_limit;
 
     if (limit > 0)
         pages = Math.ceil(rows / limit);
@@ -75,6 +81,7 @@ function showFiles() {
 }
 
 function postData(action) {
+
 
     $("#files_list").empty();
     $("#csv").hide();
